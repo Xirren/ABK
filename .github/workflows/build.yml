@@ -5856,6 +5856,24 @@ jobs:
               print("未发现 MODULE_SIG_PROTECT 强制启用逻辑，跳过。")
           PY
 
+      - name: 修改 MODULE_SIG_PROTECT 为 def_bool n
+        working-directory: ${{ env.KERNEL_ROOT }}
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          kconfig = Path("kernel/module/Kconfig")
+          text = kconfig.read_text()
+          # 替换 def_bool y 为 def_bool n
+          new_text = re.sub(r'^(\s*config MODULE_SIG_PROTECT\s*\n\s*def_bool y\s*\n)', r'\1def_bool n\n', text, flags=re.MULTILINE)
+          if new_text != text:
+              kconfig.write_text(new_text)
+              print("已将 MODULE_SIG_PROTECT 从 def_bool y 改为 def_bool n")
+          else:
+              print("未找到 MODULE_SIG_PROTECT 的 def_bool y 定义")
+          PY
+
       - name: 编译内核
         uses: nick-fields/retry@v4
         with:
