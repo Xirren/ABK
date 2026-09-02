@@ -3484,6 +3484,10 @@ jobs:
           CONFIG_TMPFS_XATTR=y
           CONFIG_TMPFS_POSIX_ACL=y
           EOF
+          grep -v -E '^(CONFIG_MODULE_SIG_PROTECT=|# CONFIG_MODULE_SIG_PROTECT is not set$)' "$DEFCONFIG" > "${DEFCONFIG}.tmp" || true
+          mv "${DEFCONFIG}.tmp" "$DEFCONFIG"
+          echo "# CONFIG_MODULE_SIG_PROTECT is not set" >> "$DEFCONFIG"
+          echo "已确保 CONFIG_MODULE_SIG_PROTECT is not set"
           if [ "${{ inputs.ksu_variant }}" != "None" ] && ! feature_disabled kernelsu; then
             echo "CONFIG_KSU=y" >> "$DEFCONFIG"
           fi
