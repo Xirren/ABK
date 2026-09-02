@@ -5863,15 +5863,43 @@ jobs:
           import re
           from pathlib import Path
 
-          kconfig = Path("kernel/module/Kconfig")
-          text = kconfig.read_text()
-          # 替换 def_bool y 为 def_bool n
-          new_text = re.sub(r'^(\s*config MODULE_SIG_PROTECT\s*\n\s*def_bool y\s*\n)', r'\1def_bool n\n', text, flags=re.MULTILINE)
-          if new_text != text:
-              kconfig.write_text(new_text)
-              print("已将 MODULE_SIG_PROTECT 从 def_bool y 改为 def_bool n")
+          root = Path("common")
+          if not root.is_dir():
+              raise SystemExit("common/ 不存在")
+
+          block_re = re.compile(r'^[ \t]*(?:menu)?config[ \t]+MODULE_SIG_PROTECT\b')
+          block_end_re = re.compile(
+              r'^[ \t]*(?:menu)?config[ \t]+[A-Za-z0-9_]+\b'
+              r'|^[ \t]*(?:menu|endmenu|choice|endchoice|comment|source|if|endif)\b'
+          )
+          defbool_re = re.compile(r'^[ \t]*def_bool[ \t]+y\b')
+
+          changed = []
+          for kc in sorted(root.rglob("Kconfig*")):
+              text = kc.read_text(errors="replace")
+              lines = text.splitlines(keepends=True)
+              out = []
+              in_block = False
+              for line in lines:
+                  if block_re.match(line):
+                      in_block = True
+                  elif in_block and block_end_re.match(line):
+                      in_block = False
+                  if in_block and defbool_re.match(line):
+                      out.append(re.sub(r'y\b', 'n', line, count=1))
+                      continue
+                  out.append(line)
+              new = "".join(out)
+              if new != text:
+                  kc.write_text(new)
+                  changed.append(str(kc))
+
+          if changed:
+              print("已将 MODULE_SIG_PROTECT 的 def_bool y 改为 def_bool n：")
+              for f in changed:
+                  print(f"  - {f}")
           else:
-              print("未找到 MODULE_SIG_PROTECT 的 def_bool y 定义")
+              print("未找到 MODULE_SIG_PROTECT 的 def_bool y 定义，跳过。")
           PY
 
       - name: 编译内核
