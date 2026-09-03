@@ -1122,6 +1122,25 @@ jobs:
               >> "$GITHUB_ENV"
           fi
 
+      - name: 应用 ABK common.patch (android16-6.12)
+        if: inputs.android_version == 'android16' && inputs.kernel_version == '6.12'
+        working-directory: ${{ env.KERNEL_ROOT }}/common
+        run: |
+          set -euo pipefail
+          PATCH_FILE="$GITHUB_WORKSPACE/patches/common.patch"
+          if [ ! -f "$PATCH_FILE" ]; then
+            echo "::warning::未找到 $PATCH_FILE，跳过 ABK common.patch。"
+            exit 0
+          fi
+          if ! git apply --check "$PATCH_FILE" 2>/dev/null; then
+            echo "::warning::ABK common.patch 无法干净应用，尝试 patch --forward 容错。"
+          fi
+          git apply "$PATCH_FILE" || patch -p1 --forward < "$PATCH_FILE" || {
+            echo "::error::ABK common.patch 应用失败。"
+            exit 1
+          }
+          echo "已应用 ABK common.patch"
+
       - name: 初始化 Custom source manifest 状态
         if: inputs.source_mode == 'custom_git'
         env:
