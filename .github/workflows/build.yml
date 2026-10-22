@@ -3360,6 +3360,12 @@ jobs:
           enable_required_config CONFIG_PID_NS
           enable_required_config CONFIG_DEVTMPFS
 
+          # 用户命名空间 / 进程 / 网络诊断 / MAC VLAN 支持
+          enable_config_if_defined CONFIG_USER_NS
+          enable_config_if_defined CONFIG_UNIX_DIAG
+          enable_config_if_defined CONFIG_PROC_CHILDREN
+          enable_config_if_defined CONFIG_MACVLAN
+
           # 可选: 网络相关配置 (Docker/NAT 模式)
           enable_config_if_defined CONFIG_NETFILTER_XT_MATCH_ADDRTYPE
           enable_config_if_defined CONFIG_NETFILTER_XT_TARGET_LOG
